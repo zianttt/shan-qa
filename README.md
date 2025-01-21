@@ -1,0 +1,1 @@
+This is a project to solve my brother's problem. He needs a reliable Math QA system for his university works. OpenAI gpt-o1 model works well, but it is expensive and limited. 
