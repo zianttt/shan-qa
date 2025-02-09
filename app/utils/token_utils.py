@@ -1,4 +1,3 @@
-import base64
 from typing import List
 import tiktoken
 from langchain_core.messages import (
@@ -37,7 +36,3 @@ def tiktoken_counter(messages: List[BaseMessage]) -> int:
         if msg.name:
             num_tokens += tokens_per_name + str_token_counter(msg.name)
     return num_tokens
-
-def encode_image(image_path: str) -> str:
-  with open(image_path, "rb") as image_file:
-    return base64.b64encode(image_file.read()).decode('utf-8')

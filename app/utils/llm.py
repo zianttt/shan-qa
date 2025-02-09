@@ -1,6 +1,5 @@
 import os
-from typing import List
-from configs import State
+from app.configs.configs import State
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import (
     trim_messages,
@@ -17,15 +16,14 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_mongodb.chat_message_histories import MongoDBChatMessageHistory
 
+from app.utils.token_utils import tiktoken_counter
+from app.db import get_client
 
-
-from configs import Config
-from utils import tiktoken_counter
-
+mongo_client = get_client()
 
 class StatefulLLM:
-    def __init__(self):
-        self.model = ChatOpenAI(model="deepseek-r1-distill-llama-70b",
+    def __init__(self, session_id: str):
+        self.model = ChatOpenAI(model="llama-3.3-70b-versatile",
                    api_key=os.getenv("GROQ_API_KEY"),
                    base_url=os.getenv("GROQ_BASE_URL"))
         
@@ -47,12 +45,14 @@ class StatefulLLM:
             [
                 (
                     "system",
-                    "You are a helpful Math teacher",
+                    "You are a helpful teacher. You always answer questions accurately, and provide steps-by-steps explanation. You should always answer in English. You should strictly and always answer in well-formatted Markdown format. If there are any formula, you should use LaTeX to format them.",
                 ),
                 MessagesPlaceholder(variable_name="history"),
                 MessagesPlaceholder(variable_name="messages"),
             ]
         )
+
+        self.session_id = session_id
 
         self.init_langchain_app()
         self.init_chain()
@@ -70,9 +70,9 @@ class StatefulLLM:
         self.chain = RunnableWithMessageHistory(
             chain,
             lambda session_id: MongoDBChatMessageHistory(
-                session_id="test_session",
-                connection_string="mongodb://localhost:27017/",
-                database_name="testdb",
+                connection_string=os.getenv("MONGO_URI"),
+                session_id=session_id,
+                database_name=os.getenv("MONGO_DB"),
                 collection_name="chat_histories",
             ),
             input_messages_key="messages",
@@ -86,32 +86,11 @@ class StatefulLLM:
         )
         response = await self.model.ainvoke(prompt)
         return {"messages": response}
-    
-    async def query_llm(self, query: str, config: Config):
+
+    async def query_llm(self, query: str):
         input_messages = [HumanMessage(query)]
-        response = await self.langchain_app.ainvoke({"messages": input_messages}, config)
+        response = await self.chain.ainvoke(
+            {"messages": input_messages},
+            {"configurable": {"session_id": self.session_id}},
+        )
         return response
-
-    async def query_llm(self, query: str, config: Config):
-        input_messages = [HumanMessage(query)]
-        response = await self.langchain_app.ainvoke({"messages": input_messages}, config)
-        return response
-    
-
-async def main():
-    # Define a new graph
-    app = StatefulLLM()
-
-    config = {"configurable": {"thread_id": "abc1234"}}
-
-    while True:
-        query = input("You: ")
-        if query == "exit":
-            break
-
-        output = await app.query_llm(query, config)
-        print(f"Bot: {output['messages'][-1].content}")
-
-if __name__ == "__main__":
-    import asyncio
-    asyncio.run(main())
