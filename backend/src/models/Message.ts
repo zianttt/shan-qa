@@ -10,6 +10,10 @@ const messageSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    attachments: {
+        type: [String],
+        default: [],
+    },
     sender: {
         type: String,
         enum: ["user", "assistant"],

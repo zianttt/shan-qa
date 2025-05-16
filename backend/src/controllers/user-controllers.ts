@@ -68,7 +68,10 @@ export const userSignup = async (
             success: true,
             message: "User created successfully",
             user_id: user._id,
+            name: user.name,
+            email: user.email,
         });
+
     } catch (error) {
         console.error("Error creating user:", error);
         res.status(500).json({
@@ -128,6 +131,8 @@ export const userLogin = async (
             success: true,
             message: "User logged in successfully",
             user_id: user._id,
+            name: user.name,
+            email: user.email,
         });
 
     } catch (error) {
@@ -137,5 +142,66 @@ export const userLogin = async (
             message: "Internal server error",
             error: error.message,
         });
+    }
+}
+
+export const userLogout = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        res.clearCookie(COOKIE_NAME, {
+            httpOnly: true,
+            domain: process.env.DOMAIN,
+            signed: true,
+        });
+        res.status(200).json({
+            success: true,
+            message: "User logged out successfully",
+        });
+    } catch (error) {
+        console.error("Error logging out user:", error);
+        res.status(500).json({
+            success: false,
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+}
+
+export const verifyUser = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const user = await User.findById(res.locals.jwtData.id);
+        if (!user) {
+            res.status(404).json({
+                success: false,
+                message: "User not found or token expired",
+            });
+            return;
+        }
+
+        if (user._id.toString() !== res.locals.jwtData.id) {
+            res.status(401).json({
+                success: false,
+                message: "Unauthorized",
+            });
+            return;
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "User verified successfully",
+            user_id: user._id,
+            name: user.name,
+            email: user.email,
+        });
+
+    } catch (error) {
+        
     }
 }
