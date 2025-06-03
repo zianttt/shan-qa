@@ -4,12 +4,12 @@ export interface Attachment {
 }
 
 export interface CompletionMessageDto {
-    role: 'user' | 'assistant';
+    role: 'user' | 'assistant' | 'system';
     content: string;
     attachments: Attachment[];
 }
 
 export interface CompletionMessage {
-    role: 'user' | 'assistant';
+    role: 'user' | 'assistant' | 'system';
     content: string;
 }

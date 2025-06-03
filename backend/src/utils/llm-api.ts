@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { CompletionMessage } from "./types.js";
+import { getSystemPrompt } from "./prompts.js";
 
 export const generateChatCompletion = async (messages: CompletionMessage[], model: string) => {
 
@@ -8,8 +9,13 @@ export const generateChatCompletion = async (messages: CompletionMessage[], mode
         baseURL: process.env.GROQ_BASE_URL,
     });
 
+    const systemPrompt = getSystemPrompt();
+    messages.unshift({
+        role: "system",
+        content: systemPrompt,
+    });
+
     const completion = await client.chat.completions.create({
-        // model: "llama-3.3-70b-versatile",
         model: model,
         messages: messages,
     });
