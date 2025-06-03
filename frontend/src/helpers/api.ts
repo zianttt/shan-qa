@@ -1,5 +1,5 @@
 import axios from "axios"
-import type { CompletionMessage } from "./types";
+import type { CompletionMessageDto, DeleteChatroomOptions, FileObj } from "./types";
 
 export const loginUser = async (email: string, password: string) => {
     const res = await axios.post("/users/login", { email, password });
@@ -47,18 +47,46 @@ export const createChatroom = async (name: string) => {
     }
 
     const data = await res.data;
-    return data;
-}
-
-export const deleteChatroom = async (chatroomId: string) => {
-    const res = await axios.delete(`/chats/delete-chatroom/${chatroomId}`);
-    if (res.status !== 200) {
-        throw new Error("Failed to delete chatroom");
+    if (!data.success || !data.chatroom) {
+        throw new Error("Chatroom creation failed");
+    }
+    if (!data.chatroom._id) {
+        throw new Error("Chatroom ID is missing");
     }
 
-    const data = await res.data;
-    return data;
+    return data.chatroom._id;
 }
+
+export const deleteChatroom = async (
+    chatroomId: string, 
+    options: DeleteChatroomOptions = {}
+) => {
+    const { deleteAttachments = true, force = false } = options;
+    
+    try {
+        const res = await axios.delete(
+            `/chats/delete-chatroom/${chatroomId}`,
+            {
+                data: { 
+                    deleteAttachments,
+                    force
+                 }
+            }
+        );
+        
+        if (res.status !== 200) {
+            throw new Error("Failed to delete chatroom");
+        }
+
+        return res.data;
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            const errorData = error.response?.data;
+            throw new Error(errorData?.message || "Failed to delete chatroom");
+        }
+        throw error;
+    }
+};
 
 export const getChatrooms = async () => {
     const res = await axios.get("/chats/chatrooms");
@@ -80,8 +108,21 @@ export const getChatroomMessages = async (chatroomId: string) => {
     return data.messages;
 }
 
-export const sendChat = async (chatroomId: string, messages: CompletionMessage[], attachments: string[]) => {
-    const res = await axios.post("/chats/chat", { chatroomId, messages, attachments });
+export const sendChat = async (chatroomId: string, messages: CompletionMessageDto[], files: FileObj[], model: string) => {
+    const formData = new FormData();
+    formData.append('chatroomId', chatroomId);
+    formData.append('messages', JSON.stringify(messages));
+    formData.append('model', model);
+    files.forEach((file, _) => {
+        formData.append('files', file.file);
+    });
+
+    const res = await axios.post("/chats/chat", formData, {
+        headers: {
+        'Content-Type': 'multipart/form-data',
+        },
+    });
+
     if (res.status !== 200) {
         throw new Error("Failed to generate chat completion");
     }
@@ -90,13 +131,17 @@ export const sendChat = async (chatroomId: string, messages: CompletionMessage[]
     return data;
 }
 
-export const imageToText = async (image: File): Promise<string> => {
+export const imageToText = async (file: File): Promise<string> => {
   const formData = new FormData();
-  formData.append("image", image);
+  formData.append("image", file);
 
-  const res = await axios.post("/chats/image-to-text", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const res = await axios.post(
+    "/chats/image-to-text", 
+    formData, 
+    {
+        headers: { "Content-Type": "multipart/form-data" },
+    }
+    );
 
   if (res.status !== 200 || !res.data.success) {
     console.error(res.data?.message ?? "Unknown error");
@@ -106,3 +151,66 @@ export const imageToText = async (image: File): Promise<string> => {
   // return the plain string
   return res.data.message;
 };
+
+export const fetchSignedUrl = async (s3Key: string)
+: Promise<{signedUrl: string, expiresAt: Date}> => {
+    const res = await axios.get(
+        `/chats/attachment/${encodeURIComponent(s3Key)}`,
+        {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+            },
+        }
+    );
+
+    if (res.status !== 200) {
+        throw new Error("Failed to get signed URLs");
+    }
+
+    const data = await res.data;
+    const signedUrl = data.signedUrl;
+    const expiresAt = data.expiresAt;
+
+    if (!signedUrl || !expiresAt) {
+        throw new Error("Signed URL or expiration time is missing");
+    }
+
+    return {
+        signedUrl,
+        expiresAt: new Date(expiresAt),
+    };
+}
+
+export const fetchSignedUrls = async (s3Keys: string[])
+    : Promise<{signedUrls: Record<string, string>, expiresAt: Date}> => {
+
+    const res = await axios.post(
+        '/chats/attachments/signed-urls',
+        {
+            s3Keys: s3Keys,
+        },
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+            },
+        }
+    );
+
+    if (res.status !== 200) {
+        throw new Error("Failed to get signed URLs");
+    }
+
+    const data = await res.data;
+    const signedUrls = data.signedUrls;
+    const expiresAt = data.expiresAt;
+
+    if (!signedUrls || !expiresAt) {
+        throw new Error("Signed URLs or expiration time is missing");
+    }
+
+    return {
+        signedUrls: signedUrls,
+        expiresAt: new Date(expiresAt),
+    };
+}

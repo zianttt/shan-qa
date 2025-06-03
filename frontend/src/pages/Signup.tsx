@@ -1,38 +1,23 @@
-import React, { useState } from 'react';
-import { 
-  Box, 
-  Button, 
-  Typography, 
-  Link as MuiLink, 
-  TextField,
-  InputAdornment,
-  IconButton,
-  Paper,
-  // Divider,
-  useTheme,
-  useMediaQuery,
-  CircularProgress
-} from "@mui/material";
-import { 
-  PersonAdd as PersonAddIcon, 
-  Visibility, 
-  VisibilityOff,
-  Email,
-  Lock,
-  Person,
-  // Google,
-  // GitHub
-} from "@mui/icons-material";
+import { useState } from 'react';
 import { Link as RouterLink } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { 
+  Eye, 
+  EyeOff, 
+  Mail, 
+  Lock, 
+  User,
+  UserPlus,
+  MessageSquare,
+  Sparkles,
+  Shield
+} from 'lucide-react';
 
 function Signup() {
   const auth = useAuth();
   const navigate = useNavigate();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -95,271 +80,191 @@ function Signup() {
     }
   };
 
-  // const handleSocialSignup = (provider: string) => {
-  //   toast.loading(`Signing up with ${provider}...`);
-  //   // Implement social signup functionality here
-  //   setTimeout(() => {
-  //     toast.dismiss();
-  //     toast.error(`${provider} signup not implemented yet`);
-  //   }, 1500);
-  // };
-
   return (
-    <Box 
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        backgroundColor: theme.palette.mode === 'dark' ? '#121212' : '#f5f5f5',
-        overflow: 'hidden',
-        position: 'relative'
-      }}
-    >
-      {/* Background decoration */}
-      <Box 
-        sx={{
-          position: 'absolute',
-          top: -100,
-          right: -100,
-          width: 300,
-          height: 300,
-          borderRadius: '50%',
-          background: 'linear-gradient(135deg, #00fffc 0%, #0050ff 100%)',
-          opacity: 0.1,
-          zIndex: 0
-        }}
-      />
-      <Box 
-        sx={{
-          position: 'absolute',
-          bottom: -150,
-          left: -150,
-          width: 400,
-          height: 400,
-          borderRadius: '50%',
-          background: 'linear-gradient(135deg, #00fffc 0%, #0050ff 100%)',
-          opacity: 0.1,
-          zIndex: 0
-        }}
-      />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background Decorations */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-indigo-600/20 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-tr from-purple-400/20 to-pink-600/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-cyan-400/10 to-blue-500/10 rounded-full blur-2xl"></div>
+      </div>
 
-      {/* Signup container */}
-      <Box
-        sx={{
-          display: 'flex',
-          width: '100%',
-          justifyContent: 'center',
-          alignItems: 'center',
-          padding: isMobile ? 2 : 4,
-          zIndex: 1
-        }}
-      >
-        <Paper
-          elevation={8}
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            maxWidth: 450,
-            width: '100%',
-            overflow: 'hidden',
-            borderRadius: 3,
-            backgroundColor: theme.palette.mode === 'dark' ? '#1e1e1e' : '#ffffff',
-          }}
-        >
-          {/* Header */}
-          <Box
-            sx={{
-              padding: 3,
-              textAlign: 'center',
-              backgroundColor: 'transparent',
-              borderBottom: '1px solid',
-              borderColor: theme.palette.divider,
-            }}
-          >
-            <Typography variant="h4" fontWeight={700} color="primary">
-              Create Account
-            </Typography>
-            <Typography variant="body2" color="text.secondary" mt={1}>
-              Join us today and get started
-            </Typography>
-          </Box>
+      {/* Floating Elements */}
+      <div className="absolute top-20 left-20 animate-float">
+        <div className="w-3 h-3 bg-blue-400 rounded-full opacity-60"></div>
+      </div>
+      <div className="absolute top-32 right-32 animate-float-delayed">
+        <div className="w-2 h-2 bg-indigo-500 rounded-full opacity-40"></div>
+      </div>
+      <div className="absolute bottom-20 left-1/4 animate-float">
+        <div className="w-4 h-4 bg-purple-400 rounded-full opacity-30"></div>
+      </div>
+
+      {/* Main Container */}
+      <div className="relative w-full max-w-md">
+        {/* Logo/Brand Section */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl shadow-xl mb-4 relative">
+            <MessageSquare size={28} className="text-white" />
+            <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+              <Sparkles size={12} className="text-white" />
+            </div>
+          </div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent mb-2">
+            Shan-GPT
+          </h1>
+        </div>
+
+        {/* Signup Card */}
+        <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 overflow-hidden">
+          {/* Card Header */}
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 border-b border-slate-200/50">
+            <div className="flex items-center justify-center space-x-2">
+              <Shield size={20} className="text-blue-600" />
+              <span className="text-slate-700 font-medium">Secure Registration</span>
+            </div>
+          </div>
 
           {/* Form */}
-          <Box sx={{ padding: 3 }}>
-            <form onSubmit={handleSubmit}>
-              <TextField
-                fullWidth
-                label="Full Name"
-                name="name"
-                type="text"
-                value={formValues.name}
-                onChange={handleChange}
-                error={!!errors.name}
-                helperText={errors.name}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Person fontSize="small" color="action" />
-                    </InputAdornment>
-                  ),
-                }}
-                margin="normal"
-                variant="outlined"
-              />
-              
-              <TextField
-                fullWidth
-                label="Email Address"
-                name="email"
-                type="email"
-                value={formValues.email}
-                onChange={handleChange}
-                error={!!errors.email}
-                helperText={errors.email}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Email fontSize="small" color="action" />
-                    </InputAdornment>
-                  ),
-                }}
-                margin="normal"
-                variant="outlined"
-              />
-              
-              <TextField
-                fullWidth
-                label="Password"
-                name="password"
-                type={showPassword ? 'text' : 'password'}
-                value={formValues.password}
-                onChange={handleChange}
-                error={!!errors.password}
-                helperText={errors.password}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Lock fontSize="small" color="action" />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowPassword(!showPassword)}
-                        edge="end"
-                      >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-                margin="normal"
-                variant="outlined"
-              />
-              
-              {/* <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                By signing up, you agree to our Terms of Service and Privacy Policy
-              </Typography> */}
-              
-              <Button
+          <div className="p-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Name Field */}
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-slate-700 flex items-center">
+                  <User size={16} className="mr-2 text-slate-500" />
+                  Username
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    name="name"
+                    value={formValues.name}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-3 bg-white border-2 rounded-xl transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
+                      errors.name 
+                        ? 'border-red-300 focus:border-red-500' 
+                        : 'border-slate-300 focus:border-blue-500 hover:border-slate-400'
+                    }`}
+                    placeholder="Enter your username"
+                  />
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <User size={18} className="text-slate-400" />
+                  </div>
+                </div>
+                {errors.name && (
+                  <p className="text-sm text-red-500 flex items-center mt-1">
+                    <span className="w-1 h-1 bg-red-500 rounded-full mr-2"></span>
+                    {errors.name}
+                  </p>
+                )}
+              </div>
+
+              {/* Email Field */}
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-slate-700 flex items-center">
+                  <Mail size={16} className="mr-2 text-slate-500" />
+                  Email Address
+                </label>
+                <div className="relative">
+                  <input
+                    type="email"
+                    name="email"
+                    value={formValues.email}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-3 bg-white border-2 rounded-xl transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${
+                      errors.email 
+                        ? 'border-red-300 focus:border-red-500' 
+                        : 'border-slate-300 focus:border-blue-500 hover:border-slate-400'
+                    }`}
+                    placeholder="Enter your email"
+                  />
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <Mail size={18} className="text-slate-400" />
+                  </div>
+                </div>
+                {errors.email && (
+                  <p className="text-sm text-red-500 flex items-center mt-1">
+                    <span className="w-1 h-1 bg-red-500 rounded-full mr-2"></span>
+                    {errors.email}
+                  </p>
+                )}
+              </div>
+
+              {/* Password Field */}
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-slate-700 flex items-center">
+                  <Lock size={16} className="mr-2 text-slate-500" />
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    value={formValues.password}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-3 bg-white border-2 rounded-xl transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-500/20 pr-12 ${
+                      errors.password 
+                        ? 'border-red-300 focus:border-red-500' 
+                        : 'border-slate-300 focus:border-blue-500 hover:border-slate-400'
+                    }`}
+                    placeholder="Create a password (min. 6 characters)"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className="text-sm text-red-500 flex items-center mt-1">
+                    <span className="w-1 h-1 bg-red-500 rounded-full mr-2"></span>
+                    {errors.password}
+                  </p>
+                )}
+              </div>
+
+              {/* Signup Button */}
+              <button
                 type="submit"
-                fullWidth
-                variant="contained"
                 disabled={loading}
-                disableElevation
-                sx={{
-                  py: 1.5,
-                  mt: 3,
-                  mb: 2,
-                  fontWeight: 600,
-                  borderRadius: 2,
-                  background: 'linear-gradient(90deg, #00fffc 0%, #0050ff 100%)',
-                  '&:hover': {
-                    background: 'linear-gradient(90deg, #00f2ef 0%, #0045e6 100%)',
-                  },
-                }}
-                startIcon={loading ? undefined : <PersonAddIcon />}
+                className={`w-full py-4 px-6 rounded-xl font-semibold text-white shadow-lg transition-all duration-200 transform ${
+                  loading
+                    ? 'bg-gradient-to-r from-slate-400 to-slate-500 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]'
+                }`}
               >
-                {loading ? <CircularProgress size={24} color="inherit" /> : "Create Account"}
-              </Button>
+                {loading ? (
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    <span>Creating Account...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center space-x-2">
+                    <UserPlus size={20} />
+                    <span>Create Account</span>
+                  </div>
+                )}
+              </button>
             </form>
-            
-            {/* <Box sx={{ position: 'relative', my: 2 }}>
-              <Divider>
-                <Typography variant="caption" sx={{ px: 1, color: 'text.secondary' }}>
-                  OR SIGN UP WITH
-                </Typography>
-              </Divider>
-            </Box>
-            
-            <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
-              <Button
-                fullWidth
-                variant="outlined"
-                onClick={() => handleSocialSignup('Google')}
-                startIcon={<Google />}
-                sx={{ 
-                  py: 1,
-                  borderRadius: 2,
-                  borderColor: theme.palette.divider,
-                  '&:hover': {
-                    borderColor: '#DB4437',
-                    backgroundColor: 'rgba(219, 68, 55, 0.04)'
-                  }
-                }}
-              >
-                Google
-              </Button>
-              <Button
-                fullWidth
-                variant="outlined"
-                onClick={() => handleSocialSignup('GitHub')}
-                startIcon={<GitHub />}
-                sx={{ 
-                  py: 1,
-                  borderRadius: 2,
-                  borderColor: theme.palette.divider,
-                  '&:hover': {
-                    borderColor: '#333',
-                    backgroundColor: 'rgba(51, 51, 51, 0.04)'
-                  }
-                }}
-              >
-                GitHub
-              </Button>
-            </Box> */}
-          </Box>
-          
+          </div>
+
           {/* Footer */}
-          <Box
-            sx={{
-              p: 3,
-              borderTop: '1px solid',
-              borderColor: theme.palette.divider,
-              textAlign: 'center',
-              backgroundColor: theme.palette.mode === 'dark' ? '#121212' : '#f9f9f9',
-            }}
-          >
-            <Typography variant="body2" color="text.secondary">
+          <div className="p-6 bg-gradient-to-r from-slate-50 to-slate-100 border-t border-slate-200/50 text-center">
+            <p className="text-slate-600">
               Already have an account?{' '}
-              <MuiLink 
-                component={RouterLink} 
+              <RouterLink 
                 to="/login" 
-                underline="none"
-                sx={{ 
-                  fontWeight: 600,
-                  color: 'primary.main',
-                  '&:hover': {
-                    textDecoration: 'underline'
-                  }
-                }}
+                className="font-semibold text-blue-600 hover:text-blue-700 transition-colors hover:underline"
               >
                 Sign in
-              </MuiLink>
-            </Typography>
-          </Box>
-        </Paper>
-      </Box>
-    </Box>
+              </RouterLink>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 

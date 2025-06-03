@@ -7,7 +7,8 @@ type User = {
 }
 
 type UserAuth = {
-    isLoaggedIn: boolean;
+    isLoggedIn: boolean;
+    isLoading: boolean;
     user: User | null;
     login: (email: string, password: string) => Promise<void>;
     signup: (name: string, email: string, password: string) => Promise<void>;
@@ -17,30 +18,36 @@ const AuthContext = createContext<UserAuth | null>(null);
 
 const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
-    const [isLoaggedIn, setIsLoaggedIn] = useState(false);
+    const [isLoggedIn, setisLoggedIn] = useState(false);
+    const [isLoading, setIsLoading] = useState(true); 
 
     useEffect(() => {
-        // fetch user cookies
         async function checkStatus() {
-            const data = await checkAuthStatus();
-            if (data) {
-                setUser({ name: data.name, email: data.email });
-                setIsLoaggedIn(true);
-            } else {
+            try {
+                const data = await checkAuthStatus();
+                if (data) {
+                    setUser({ name: data.name, email: data.email });
+                    setisLoggedIn(true);
+                } else {
+                    setUser(null);
+                    setisLoggedIn(false);
+                }
+            } catch (err) {
+                console.error("Error checking auth status:", err);
                 setUser(null);
-                setIsLoaggedIn(false);
+                setisLoggedIn(false);
+            } finally {
+                setIsLoading(false); // Set loading to false when done
             }
         }
-        checkStatus().catch((err) => {
-            console.error("Error checking auth status:", err);
-        });
+        checkStatus();
     }, []);
 
     const login = async (email: string, password: string) => {
         const data = await loginUser(email, password);
         if (data) {
             setUser({ name: data.name, email: data.email });
-            setIsLoaggedIn(true);
+            setisLoggedIn(true);
         } else {
             throw new Error("Failed to login");
         }
@@ -51,7 +58,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log("Login data:", data);
         if (data) {
             setUser({ name: data.name, email: data.email });
-            setIsLoaggedIn(true);
+            setisLoggedIn(true);
         } else {
             throw new Error("Failed to signup");
         }
@@ -61,14 +68,15 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const data = await logoutUser();
         if (data) {
             setUser(null);
-            setIsLoaggedIn(false);
+            setisLoggedIn(false);
         } else {
             throw new Error("Failed to logout");
         }
     }
 
     const value = {
-        isLoaggedIn,
+        isLoggedIn,
+        isLoading,
         user,
         login,
         signup,

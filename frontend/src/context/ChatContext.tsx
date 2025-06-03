@@ -1,86 +1,168 @@
-import { createContext, useContext, useState } from "react"
-import type { Chats, Message, CompletionMessage } from "../helpers/types";
-import { createChatroom, deleteChatroom, sendChat, getChatroomMessages, getChatrooms, imageToText } from "../helpers/api";
-import { formatDescriptions } from "../helpers/utils";
+import { createContext, useContext, useEffect, useState } from "react"
+import type { Chats, Message, CompletionMessageDto, FileObj } from "../helpers/types";
+import { createChatroom, deleteChatroom, sendChat, getChatroomMessages, getChatrooms, imageToText, fetchSignedUrl, fetchSignedUrls } from "../helpers/api";
+import { llmMapping } from "../helpers/constants";
 
+type SignedUrlCache = {
+  url: string;
+  expiresAt: Date;
+};
 
 type ChatContextType = {
   message: string;
   chats: Chats[];
   currentChat: Chats | null;
-  images: string[];
+  files: FileObj[];
   isLoading: boolean;
-  fetchChatrooms: () => Promise<void>;
-  createNewChatroom: () => Promise<void>;
+  signedUrlCache: Map<string, SignedUrlCache>; // Cache for signed URLs
+  model: string;
+  setModel: (model: string) => void;
+  handleCreateNewChatroom: () => void;
   deleteChat: (chatId: string) => Promise<void>;
   renameChat: (chatId: string, newTitle: string) => Promise<void>;
   sendMessage: () => Promise<void>;
   handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  removeImage: (index: number) => void;
+  removeFiles: (index: number) => void;
   setActiveChat: (chatId: string) => Promise<void>;
   setMessage: (message: string) => void;
+  getSignedUrl: (s3Key: string) => Promise<string | null>;
 }
 
 const ChatContext = createContext<ChatContextType | null>(null);
 
 const ChatProvider = ({ children }: { children: React.ReactNode}) => {
-
   const [message, setMessage] = useState('');
   const [chats, setChats] = useState<Chats[]>([]);
   const [currentChat, setCurrentChat] = useState<Chats | null>(null);
-  const [images, setImages] = useState<string[]>([]);
-  const [imageDescriptions, setImageDescriptions] = useState<string[]>([]);
+  const [files, setFiles] = useState<FileObj[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [signedUrlCache, setSignedUrlCache] = useState<Map<string, SignedUrlCache>>(new Map());
+  const [model, setModel] = useState<string>('');
 
-  const fetchChatrooms = async () => {
-    const data = await getChatrooms();
-    if (!data) {
-      console.error("Failed to fetch chatrooms");
-      return;
+  useEffect(() => {
+    if (!model && Object.keys(llmMapping).length > 0) {
+      const firstModelActualName = Object.values(llmMapping)[0];
+      setModel(firstModelActualName);
     }
-    console.log("Fetched chatrooms:", data);
-    const chatrooms = data.chatrooms
-      .map((chatroom: any) => ({
-        id: chatroom._id,
-        title: chatroom.name,
-        messages: [],
-        createdAt: new Date(chatroom.created_at),
-        updatedAt: new Date(chatroom.updated_at)
-      }))
-      .sort((a: Chats, b: Chats) => b.updatedAt.getTime() - a.updatedAt.getTime());
-    setChats(chatrooms);
+  }, [model]);
 
-    if (chatrooms.length > 0) {
-      setCurrentChat(chatrooms[0]);
-    } else {
-      await createNewChatroom();
+  const getSignedUrl = async (s3Key: string): Promise<string | null> => {
+    try {
+      // Check cache first
+      const cached = signedUrlCache.get(s3Key);
+      if (cached && cached.expiresAt > new Date()) {
+        return cached.url;
+      }
+
+      const { signedUrl, expiresAt } = await fetchSignedUrl(s3Key);
+
+      // Update cache
+      setSignedUrlCache(prev => {
+        const newCache = new Map(prev);
+        newCache.set(s3Key, { url: signedUrl, expiresAt });
+        return newCache;
+      });
+
+      return signedUrl;
+    } catch (error) {
+      console.error('Error getting signed URL:', error);
+      return null;
     }
+  };
+
+  // Batch fetch signed URLs for multiple attachments
+  const getSignedUrls = async (s3Keys: string[]): Promise<Record<string, string>> => {
+    try {
+      // Filter out keys that are still valid in cache
+      const now = new Date();
+      const keysToFetch = s3Keys.filter(key => {
+        const cached = signedUrlCache.get(key);
+        return !cached || cached.expiresAt <= now;
+      });
+
+      // Get cached URLs
+      const cachedUrls: Record<string, string> = {};
+      s3Keys.forEach(key => {
+        const cached = signedUrlCache.get(key);
+        if (cached && cached.expiresAt > now) {
+          cachedUrls[key] = cached.url;
+        }
+      });
+
+      // Fetch new URLs if needed
+      if (keysToFetch.length > 0) {
+        const {signedUrls, expiresAt } = await fetchSignedUrls(keysToFetch);
+
+
+        // Update cache
+        setSignedUrlCache(prev => {
+          const newCache = new Map(prev);
+          Object.entries(signedUrls).forEach(([key, url]) => {
+            newCache.set(key, { url: url as string, expiresAt });
+          });
+          return newCache;
+        });
+
+        return { ...cachedUrls, ...signedUrls };
+      }
+
+      return cachedUrls;
+    } catch (error) {
+      console.error('Error getting signed URLs:', error);
+      return {};
+    }
+  };
+
+  useEffect(() => {
+    const fetchChatrooms = async () => {
+      const data = await getChatrooms();
+      if (!data) {
+        console.error("Failed to fetch chatrooms");
+        return;
+      }
+      console.log("Fetched chatrooms:", data);
+      const chatrooms = data.chatrooms
+        .map((chatroom: any) => ({
+          id: chatroom._id,
+          title: chatroom.name,
+          messages: [],
+          createdAt: new Date(chatroom.created_at),
+          updatedAt: new Date(chatroom.updated_at)
+        }))
+        .sort((a: Chats, b: Chats) => b.updatedAt.getTime() - a.updatedAt.getTime());
+      setChats(chatrooms);
+    }
+
+    fetchChatrooms().catch((err) => {
+      console.error("Error fetching chatrooms:", err);
+    });
+  }, []);
+
+  const handleCreateNewChatroom = () => {
+    setMessage('');
+    setFiles([]);
+    setCurrentChat(null);
   }
 
-  const createNewChatroom = async () => {
-    if (currentChat && currentChat.messages.length === 0) {
-      console.log("No current chat to create a new chat from");
-      return;
-    }
-
+  const createNewChatroom = async (): Promise<Chats> => {
     const chatroomName = `New Chat ${chats.length + 1}`;
-    const data = await createChatroom(chatroomName);
-    if (!data) {
-      console.error("Failed to create chatroom");
-      return;
-    }
+    const chatroomId   = await createChatroom(chatroomName);
+    if (!chatroomId) throw new Error("Failed to create chatroom");
 
     const newChat: Chats = {
-      id: data._id,
-      title: chatroomName,
-      messages: [],
+      id:        chatroomId,
+      title:     chatroomName,
+      messages:  [],
       createdAt: new Date(),
-      updatedAt: new Date()
-    }
+      updatedAt: new Date(),
+    };
 
-    setChats([...chats, newChat]);
+    // queue up both state updates for next render
+    setChats((prev) => [newChat, ...prev]);
     setCurrentChat(newChat);
-  }
+
+    return newChat;
+  };
 
   const setActiveChat = async (chatId: string) => {
     const chat = chats.find(chat => chat.id === chatId);
@@ -102,7 +184,12 @@ const ChatProvider = ({ children }: { children: React.ReactNode}) => {
         content: msg.content,
         sender: msg.sender,
         timestamp: new Date(msg.created_at),
-        attachments: msg.attachments
+        attachments: msg.attachments?.map((att: any) => ({
+          s3Key: att.s3Key,           // Store S3 key instead of URL
+          description: att.description,
+          fileName: att.fileName,
+          contentType: att.contentType
+        })) || []
       })).sort((a: Message, b: Message) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()),
     };
 
@@ -110,7 +197,17 @@ const ChatProvider = ({ children }: { children: React.ReactNode}) => {
     const updatedChats = chats.map(c => 
       c.id === chatId ? updatedChat : c
     );
-    setChats(updatedChats);    
+    setChats(updatedChats);
+
+    // Prefetch signed URLs for all attachments in this chat
+    const allS3Keys = updatedChat.messages.flatMap(msg => 
+      msg.attachments?.map(att => att.s3Key) || []
+    );
+    if (allS3Keys.length > 0) {
+      getSignedUrls(allS3Keys); // Prefetch URLs in background
+    }
+
+    console.log("Active chat set:", updatedChat);
   }
 
   const deleteChat = async (chatId: string) => {
@@ -122,9 +219,9 @@ const ChatProvider = ({ children }: { children: React.ReactNode}) => {
     
     const updatedChats = chats.filter(chat => chat.id !== chatId);
     setChats(updatedChats);
-    if (currentChat?.id === chatId) {
-      setCurrentChat(updatedChats[0] || null);
-    }
+    setCurrentChat(null);
+    setMessage('');
+    setFiles([]);
   };
 
   const renameChat = async (chatId: string, newTitle: string) => {
@@ -140,84 +237,91 @@ const ChatProvider = ({ children }: { children: React.ReactNode}) => {
   const handleImageUpload = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
-    if (!e.target.files) return;
 
-    const fileArray = Array.from(e.target.files);
-    const fileUrls = fileArray.map((file) => URL.createObjectURL(file));
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-    // kick off all OCR calls in parallel
-    try {
-      const descriptions = await Promise.all(
-        fileArray.map((file) => imageToText(file))
-      );
+    const selectedFiles = Array.from(files);
 
-      setImages((prev) => [...prev, ...fileUrls]);
-      setImageDescriptions((prev) => [...prev, ...descriptions]);
-    } catch (err) {
-      console.error("One or more images failed to process:", err);
+    for (const file of selectedFiles) {
+      try {
+        const previewUrl = URL.createObjectURL(file);
+        const description = await imageToText(file);
+        setFiles((prev) => [
+          ...prev,
+          { 
+            file: file,
+            previewUrl: previewUrl, 
+            description: description
+          },
+        ]);
+      } catch (err) {
+        console.error("One or more images failed to process:", err);
+      }
+    }
+
+    if (e.target) {
+      e.target.value = "";
     }
   };
 
-  // Remove an uploaded image
-  const removeImage = (index: number) => {
-    const newImages = [...images];
-    newImages.splice(index, 1);
-    setImages(newImages);
-    const newDescriptions = [...imageDescriptions];
-    newDescriptions.splice(index, 1);
-    setImageDescriptions(newDescriptions);
+  const removeFiles = (index: number) => {
+    const newFiles = [...files];
+    newFiles.splice(index, 1);
+    setFiles(newFiles);
   };
 
   const sendMessage = async () => {
-      if (!message.trim() && images.length === 0) return;
-      
-      if (!currentChat) {
-        createNewChatroom();
-        return;
-      }
+    if (!message.trim() && files.length === 0) return;
 
-      const imageDescription = (imageDescriptions.length > 0 && images.length > 0) ? formatDescriptions(imageDescriptions) : "";
+    let chat = currentChat;
+    if (!chat) {
+      chat = await createNewChatroom(); 
+    }
 
-      // Create user message
-      const userMessage: Message = {
-        id: Date.now().toString(),
-        content: imageDescription + message.trim(),
-        sender: 'user',
-        timestamp: new Date(),
-        attachments: images.length > 0 ? [...images] : undefined
-      };
-      
-      // Update current chat with new message
-      const updatedChat = {
-        ...currentChat,
-        messages: [...currentChat.messages, userMessage]
-      };
-      
-      setCurrentChat(updatedChat);
-      
-      // Update chats list
-      const updatedChats = chats.map(chat => 
-        chat.id === currentChat.id ? updatedChat : chat
-      );
-      setChats(updatedChats);
-      
-      await getCompletion(currentChat.id, updatedChat, images);
-
-      // Clear input and images
-      setMessage('');
-      setImages([]);
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      content: message.trim(),
+      sender: 'user',
+      timestamp: new Date(),
+      attachments: files.length > 0 ? files.map(file => ({
+        s3Key: '', // Will be filled after upload
+        description: file.description || ''
+      })) : []
     };
+    
+    const updatedChat = {
+      ...chat,
+      messages: [...chat.messages, userMessage]
+    };
+    
+    setCurrentChat(updatedChat);
+    setChats((prev) =>
+      prev.map((c) => (c.id === updatedChat.id ? updatedChat : c))
+    );
+    
+    await getCompletion(updatedChat.id, updatedChat);
+
+    setMessage('');
+    setFiles([]);
+  };
 
 
-  const getCompletion = async (chatroomId: string, chat: Chats, attachments: string[]) => {
+  const getCompletion = async (chatroomId: string, chat: Chats) => {
     setIsLoading(true);
 
-    const completionMessages: CompletionMessage[] = chat.messages.map(msg => ({
+    const completionMessages: CompletionMessageDto[] = chat.messages.map(msg => ({
       role: msg.sender === 'user' ? 'user' : 'assistant',
       content: msg.content,
+      attachments: msg.attachments?.map(att => ({
+        s3Key: att.s3Key,
+        description: att.description
+      })) || [],
     }));
 
-    const completionResponse = await sendChat(chatroomId, completionMessages, attachments);
+    console.log("Sending messages for completion:", completionMessages);
+
+    const completionResponse = await sendChat(chatroomId, completionMessages, files, model);
     if (!completionResponse) {
       console.error("Failed to get completion");
       setIsLoading(false);
@@ -232,11 +336,24 @@ const ChatProvider = ({ children }: { children: React.ReactNode}) => {
       sender: 'assistant',
       timestamp: new Date()
     };
+
+    // Update the user message with actual S3 keys from server response
+    const updatedMessages = [...chat.messages];
+    const lastUserMessageIndex = updatedMessages.length - 1;
+    if (completionResponse.attachmentKeys && updatedMessages[lastUserMessageIndex].sender === 'user') {
+      updatedMessages[lastUserMessageIndex] = {
+        ...updatedMessages[lastUserMessageIndex],
+        attachments: updatedMessages[lastUserMessageIndex].attachments?.map((att, index) => ({
+          ...att,
+          s3Key: completionResponse.attachmentKeys[index] || att.s3Key
+        }))
+      };
+    }
     
     // Update current chat with assistant message
     const updatedChat = {
       ...chat,
-      messages: [...chat.messages, assistantMessage]
+      messages: [...updatedMessages, assistantMessage]
     };
     
     setCurrentChat(updatedChat);    
@@ -244,21 +361,42 @@ const ChatProvider = ({ children }: { children: React.ReactNode}) => {
     setIsLoading(false);
   };  
 
+  // Cleanup expired URLs periodically
+  useEffect(() => {
+    const cleanupInterval = setInterval(() => {
+      const now = new Date();
+      setSignedUrlCache(prev => {
+        const newCache = new Map();
+        prev.forEach((value, key) => {
+          if (value.expiresAt > now) {
+            newCache.set(key, value);
+          }
+        });
+        return newCache;
+      });
+    }, 5 * 60 * 1000); // Clean up every 5 minutes
+
+    return () => clearInterval(cleanupInterval);
+  }, []);
+
   const value = {
     message,
     chats,
     currentChat,
-    images,
+    files,
     isLoading,
-    fetchChatrooms,
-    createNewChatroom,
+    signedUrlCache,
+    model,
+    setModel,
+    handleCreateNewChatroom,
     deleteChat,
     renameChat,
     sendMessage,
     handleImageUpload,
-    removeImage,
+    removeFiles,
     setActiveChat,
-    setMessage
+    setMessage,
+    getSignedUrl
   }
 
   return <ChatContext.Provider value={value}>

@@ -11,7 +11,14 @@ const messageSchema = new mongoose.Schema({
         required: true,
     },
     attachments: {
-        type: [String],
+        type: [
+            {
+                s3Key: { type: String, required: true },
+                description: { type: String, default: "" },
+                fileName: { type: String, required: true },
+                contentType: { type: String, required: true }
+            }
+        ],
         default: [],
     },
     sender: {
