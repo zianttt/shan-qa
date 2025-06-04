@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { verifyToken } from '../utils/token-manager.js';
-import { createChatroom, deleteChatroom, getChatroomMessages, getSignedAttachmentUrl, getSignedAttachmentUrls, getUserChatrooms, imageToText, sendMessage } from '../controllers/chat-controllers.js';
+import { createChatroom, deleteChatroom, editChatroom, getChatroomMessages, getSignedAttachmentUrl, getSignedAttachmentUrls, getUserChatrooms, imageToText, sendMessage } from '../controllers/chat-controllers.js';
 import { upload } from '../utils/image-uploads.js';
 
 const chatRoutes = Router();
@@ -41,6 +41,12 @@ chatRoutes.delete(
     "/delete-chatroom/:chatroomId",
     verifyToken,
     deleteChatroom
+)
+
+chatRoutes.put(
+    "/chatrooms/:chatroomId",
+    verifyToken,
+    editChatroom
 )
 
 chatRoutes.get(

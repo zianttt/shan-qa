@@ -559,3 +559,55 @@ export const deleteChatroomForce = async (
         });
     }
 };
+
+export const editChatroom = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const { chatroomId } = req.params;
+    const { name } = req.body;
+
+    try {
+        const user = await User.findById(res.locals.jwtData.id);
+        if (!user) {
+            res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
+            return;
+        }
+
+        const chatroom = await Chatroom.findById(chatroomId);
+        if (!chatroom) {
+            res.status(404).json({
+                success: false,
+                message: "Chatroom not found",
+            });
+            return;
+        }
+
+        if (chatroom.owner.toString() !== user._id.toString()) {
+            res.status(401).json({
+                success: false,
+                message: "Unauthorized",
+            });
+            return;
+        }
+
+        chatroom.name = name || chatroom.name;
+        await chatroom.save();
+
+        res.status(200).json({
+            success: true,
+            message: "Chatroom updated successfully",
+            chatroom,
+        });
+    } catch (error) {
+        console.error("Error in editChatroom:", error);
+        res.status(500).json({
+            success: false,
+            message: error instanceof Error ? error.message : "Failed to update chatroom",
+        });
+    }
+}

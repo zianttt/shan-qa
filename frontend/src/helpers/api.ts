@@ -88,6 +88,21 @@ export const deleteChatroom = async (
     }
 };
 
+export const editChatroom = async (chatroomId: string, name: string) => {
+    const res = await axios.put(`/chats/chatrooms/${chatroomId}`, { name });
+    if (res.status !== 200) {
+        throw new Error("Failed to edit chatroom");
+    }
+    const data = await res.data;
+    if (!data.success || !data.chatroom) {
+        throw new Error("Chatroom edit failed");
+    }
+    if (!data.chatroom._id) {
+        throw new Error("Chatroom ID is missing");
+    }   
+    return data.chatroom._id;
+}
+
 export const getChatrooms = async () => {
     const res = await axios.get("/chats/chatrooms");
     if (res.status !== 200) {

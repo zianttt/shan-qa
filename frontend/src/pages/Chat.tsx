@@ -294,9 +294,12 @@ const Chat: React.FC = () => {
 
   // State management
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
+  const [editingChatId, setEditingChatId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState<string>('');
   const [modelDropdownOpen, setModelDropdownOpen] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const editInputRef = useRef<HTMLInputElement>(null);
 
   const chatContext = useChatContext();
 
@@ -305,12 +308,58 @@ const Chat: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatContext?.currentChat?.messages]);
 
+  useEffect(() => {
+    if (editingChatId && editInputRef.current) {
+      editInputRef.current.focus();
+      editInputRef.current.select();
+    }
+  }, [editingChatId]);
+
   // Handle Enter key for sending message
   const handleKeyDown = async (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       console.log(chatContext?.currentChat?.messages);
       await chatContext?.sendMessage();
+    }
+  };
+
+  // Start editing a chat title
+  const startEditing = (chatId: string, currentTitle: string) => {
+    setEditingChatId(chatId);
+    setEditingTitle(currentTitle);
+  };
+
+  // Cancel editing
+  const cancelEditing = () => {
+    setEditingChatId(null);
+    setEditingTitle('');
+  };
+
+  // Save the edited title
+  const saveTitle = async (chatId: string) => {
+    if (editingTitle.trim() && editingTitle.trim() !== '') {
+      try {
+        await chatContext?.renameChat(chatId, editingTitle.trim());
+        setEditingChatId(null);
+        setEditingTitle('');
+      } catch (error) {
+        console.error('Failed to rename chat:', error);
+        // Optionally show error message to user
+      }
+    } else {
+      cancelEditing();
+    }
+  };
+
+  // Handle key events in edit input
+  const handleEditKeyDown = async (e: React.KeyboardEvent, chatId: string) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      await saveTitle(chatId);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      cancelEditing();
     }
   };
 
@@ -399,10 +448,10 @@ const Chat: React.FC = () => {
                   ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg' 
                   : 'bg-white/60 hover:bg-white/80 text-slate-700 shadow-sm hover:shadow-md border border-slate-200/50'
               }`}
-              onClick={() => chatContext?.setActiveChat(chat.id)}
+              onClick={() => editingChatId !== chat.id && chatContext?.setActiveChat(chat.id)}
             >
               <div className="flex items-center flex-1 overflow-hidden">
-                <div className={`p-2 rounded-lg mr-3 ${
+                <div className={`p-2 rounded-lg mr-3 flex-shrink-0 ${
                   chatContext?.currentChat?.id === chat.id 
                     ? 'bg-white/20' 
                     : 'bg-gradient-to-r from-blue-100 to-indigo-100'
@@ -411,30 +460,98 @@ const Chat: React.FC = () => {
                     chatContext?.currentChat?.id === chat.id ? 'text-white' : 'text-blue-600'
                   } />
                 </div>
-                <div className="truncate font-medium">{chat.title}</div>
+                
+                {/* Editable Title */}
+                {editingChatId === chat.id ? (
+                  <input
+                    ref={editInputRef}
+                    type="text"
+                    value={editingTitle}
+                    onChange={(e) => setEditingTitle(e.target.value)}
+                    onKeyDown={(e) => handleEditKeyDown(e, chat.id)}
+                    onBlur={() => saveTitle(chat.id)}
+                    className={`flex-1 bg-transparent border-none outline-none font-medium text-sm px-2 py-1 rounded ${
+                      chatContext?.currentChat?.id === chat.id
+                        ? 'text-white placeholder-white/60 focus:bg-white/10'
+                        : 'text-slate-700 placeholder-slate-400 focus:bg-slate-50'
+                    }`}
+                    placeholder="Enter chat name..."
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                ) : (
+                  <div className="truncate font-medium flex-1">{chat.title}</div>
+                )}
               </div>
               
-              <div className="hidden group-hover:flex items-center space-x-1">
-                <button className={`p-2 rounded-lg transition-colors ${
-                  chatContext?.currentChat?.id === chat.id 
-                    ? 'hover:bg-white/20 text-white/70 hover:text-white' 
-                    : 'hover:bg-slate-100 text-slate-400 hover:text-slate-600'
-                }`}>
-                  <Edit size={14} />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    chatContext?.deleteChat(chat.id);
-                  }}
-                  className={`p-2 rounded-lg transition-colors ${
-                    chatContext?.currentChat?.id === chat.id 
-                      ? 'hover:bg-red-500/20 text-white/70 hover:text-red-200' 
-                      : 'hover:bg-red-50 text-slate-400 hover:text-red-500'
-                  }`}
-                >
-                  <Trash2 size={14} />
-                </button>
+              {/* Action Buttons */}
+              <div className={`items-center space-x-1 ${
+                editingChatId === chat.id ? 'flex' : 'hidden group-hover:flex'
+              }`}>
+                {editingChatId === chat.id ? (
+                  // Save/Cancel buttons when editing
+                  <>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        saveTitle(chat.id);
+                      }}
+                      className={`p-2 rounded-lg transition-colors ${
+                        chatContext?.currentChat?.id === chat.id 
+                          ? 'hover:bg-green-500/20 text-white/70 hover:text-green-200' 
+                          : 'hover:bg-green-50 text-slate-400 hover:text-green-600'
+                      }`}
+                      title="Save"
+                    >
+                      <Check size={14} />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        cancelEditing();
+                      }}
+                      className={`p-2 rounded-lg transition-colors ${
+                        chatContext?.currentChat?.id === chat.id 
+                          ? 'hover:bg-red-500/20 text-white/70 hover:text-red-200' 
+                          : 'hover:bg-red-50 text-slate-400 hover:text-red-500'
+                      }`}
+                      title="Cancel"
+                    >
+                      <X size={14} />
+                    </button>
+                  </>
+                ) : (
+                  // Edit/Delete buttons when not editing
+                  <>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        startEditing(chat.id, chat.title);
+                      }}
+                      className={`p-2 rounded-lg transition-colors ${
+                        chatContext?.currentChat?.id === chat.id 
+                          ? 'hover:bg-white/20 text-white/70 hover:text-white' 
+                          : 'hover:bg-slate-100 text-slate-400 hover:text-slate-600'
+                      }`}
+                      title="Rename"
+                    >
+                      <Edit size={14} />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        chatContext?.deleteChat(chat.id);
+                      }}
+                      className={`p-2 rounded-lg transition-colors ${
+                        chatContext?.currentChat?.id === chat.id 
+                          ? 'hover:bg-red-500/20 text-white/70 hover:text-red-200' 
+                          : 'hover:bg-red-50 text-slate-400 hover:text-red-500'
+                      }`}
+                      title="Delete"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           ))}

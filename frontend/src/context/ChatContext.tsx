@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react"
 import type { Chats, Message, CompletionMessageDto, FileObj } from "../helpers/types";
-import { createChatroom, deleteChatroom, sendChat, getChatroomMessages, getChatrooms, imageToText, fetchSignedUrl, fetchSignedUrls } from "../helpers/api";
+import { createChatroom, deleteChatroom, sendChat, getChatroomMessages, getChatrooms, imageToText, fetchSignedUrl, fetchSignedUrls, editChatroom } from "../helpers/api";
 import { llmMapping } from "../helpers/constants";
 
 type SignedUrlCache = {
@@ -225,6 +225,17 @@ const ChatProvider = ({ children }: { children: React.ReactNode}) => {
   };
 
   const renameChat = async (chatId: string, newTitle: string) => {
+    if (!newTitle.trim()) {
+      console.error("Chat title cannot be empty");
+      return;
+    }
+
+    const updatedChatId = await editChatroom(chatId, newTitle);
+    if (!updatedChatId) {
+      console.error("Failed to rename chatroom");
+      return;
+    }
+
     const updatedChats = chats.map(chat => 
       chat.id === chatId ? { ...chat, title: newTitle } : chat
     );
