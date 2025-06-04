@@ -111,9 +111,11 @@ export const userLogin = async (
         // Clear existing cookies
         res.clearCookie(COOKIE_NAME, {
             httpOnly: true,
-            domain: process.env.DOMAIN,
+            // domain: process.env.DOMAIN,
             signed: true,
             path: "/",
+            sameSite: "none",
+            secure: true,
         });
 
         // Create a new token and set it in the cookie
@@ -121,10 +123,12 @@ export const userLogin = async (
         const expiryDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); 
         res.cookie(COOKIE_NAME, token, {
             path: "/",
-            domain: process.env.DOMAIN,
+            // domain: process.env.DOMAIN,
             expires: expiryDate,
             httpOnly: true,
             signed: true,
+            sameSite: "none",
+            secure: true,
         })
 
         res.status(200).json({
