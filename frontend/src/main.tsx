@@ -9,7 +9,7 @@ import axios from 'axios'
 import { Toaster } from 'react-hot-toast'
 import { ChatProvider } from './context/ChatContext.tsx'
 
-axios.defaults.baseURL = "http://localhost:5000/api/v1";
+axios.defaults.baseURL = import.meta.env.VITE_SERVER_URL
 axios.defaults.withCredentials = true;
 
 const theme = createTheme({
