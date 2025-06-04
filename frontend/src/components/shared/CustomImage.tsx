@@ -6,7 +6,6 @@ interface CustomImageProps {
   s3Key: string;
   alt: string;
   className?: string;
-  fallbackSrc?: string;
   onError?: () => void;
 }
 
@@ -14,7 +13,6 @@ const CustomImage: React.FC<CustomImageProps> = ({
   s3Key, 
   alt, 
   className, 
-  fallbackSrc = "/images/placeholder.png",
   onError 
 }) => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);

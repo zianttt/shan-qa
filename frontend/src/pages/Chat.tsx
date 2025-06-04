@@ -30,11 +30,10 @@ interface InlinePattern {
 
 interface MessageRendererProps {
   content: string;
-  sender: string;
 }
 
 // Enhanced Message Renderer Component
-const MessageRenderer: React.FC<MessageRendererProps> = ({ content, sender }) => {
+const MessageRenderer: React.FC<MessageRendererProps> = ({ content }) => {
   const [copiedBlocks, setCopiedBlocks] = useState<Set<string>>(new Set());
 
   const copyToClipboard = async (text: string, blockId: string): Promise<void> => {
@@ -610,7 +609,7 @@ const Chat: React.FC = () => {
                       ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white' 
                       : 'bg-white border border-slate-200/50 text-slate-800'
                   }`}>
-                    <MessageRenderer content={msg.content} sender={msg.sender} />
+                    <MessageRenderer content={msg.content} />
                     <Attachments attachments={msg.attachments || []} />
                   </div>
                   <div className={`text-xs mt-2 px-2 ${
