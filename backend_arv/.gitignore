@@ -1,6 +1,0 @@
-dynamodb_config.json
-__pycache__/
-.env
-.pytest_cache/
-design.txt
-tests/
