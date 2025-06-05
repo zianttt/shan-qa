@@ -305,14 +305,19 @@ interface MessageRendererProps {
 
 const MessageRenderer: React.FC<MessageRendererProps> = ({ content }) => {
   const preprocessMath = (text: string) => {
-    return text.replace(/\[\s*([^\]]+?)\s*\]/g, (_, expr) => `\\[${expr}\\]`);
+    return text.replace(/\\\[([\s\S]+?)\\\]/g, (match, expr) => {
+      return `$$${expr}$$`;
+    });
   };
 
   const processedContent = preprocessMath(content);
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md prose dark:prose-invert max-w-none">
-      <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex, rehypeHighlight]}>
+    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md prose dark:prose-invert max-w-none overflow-visible">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm, remarkMath]}
+        rehypePlugins={[rehypeKatex, rehypeHighlight]}
+      >
         {processedContent}
       </ReactMarkdown>
     </div>
