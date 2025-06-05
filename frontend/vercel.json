@@ -1,8 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "https://chatapp-server.vercel.app/api/v1"
+      "source": "/api/v1/(.*)",
+      "destination": "https://chatapp-server.vercel.app/api/v1/$1"
     }
   ]
 }
