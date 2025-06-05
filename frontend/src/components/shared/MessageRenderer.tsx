@@ -298,18 +298,22 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import rehypeHighlight from 'rehype-highlight';
-import 'katex/dist/katex.min.css';
-import 'highlight.js/styles/github.css';
 
 interface MessageRendererProps {
     content: string;
 }
 
 const MessageRenderer: React.FC<MessageRendererProps> = ({ content }) => {
+  const preprocessMath = (text: string) => {
+    return text.replace(/\[\s*([^\]]+?)\s*\]/g, (_, expr) => `\\[${expr}\\]`);
+  };
+
+  const processedContent = preprocessMath(content);
+
   return (
     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md prose dark:prose-invert max-w-none">
       <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex, rehypeHighlight]}>
-        {content}
+        {processedContent}
       </ReactMarkdown>
     </div>
   );
