@@ -2,7 +2,7 @@ import axios from "axios"
 import type { CompletionMessageDto, DeleteChatroomOptions, FileObj } from "./types";
 
 export const loginUser = async (email: string, password: string) => {
-    const res = await axios.post("/users/login", { email, password });
+    const res = await axios.post("/api/v1/users/login", { email, password });
     if (res.status !== 200) {
         throw new Error("Failed to login");
     }
@@ -12,7 +12,7 @@ export const loginUser = async (email: string, password: string) => {
 }
 
 export const signupUser = async (name: string, email: string, password: string) => {
-    const res = await axios.post("/users/signup", { name, email, password });
+    const res = await axios.post("/api/v1/users/signup", { name, email, password });
     if (res.status !== 201 && res.status !== 200) {
         throw new Error("Failed to signup");
     }
@@ -21,7 +21,7 @@ export const signupUser = async (name: string, email: string, password: string) 
 }
 
 export const logoutUser = async () => {
-    const res = await axios.post("/users/logout");
+    const res = await axios.post("/api/v1/users/logout");
     if (res.status !== 200) {
         throw new Error("Failed to logout");
     }
@@ -31,7 +31,7 @@ export const logoutUser = async () => {
 }
 
 export const checkAuthStatus = async () => {
-    const res = await axios.get("/users/auth-status");
+    const res = await axios.get("/api/v1/users/auth-status");
     if (res.status !== 200) {
         throw new Error("Unable to authenticate user");
     }
@@ -41,7 +41,7 @@ export const checkAuthStatus = async () => {
 }
 
 export const createChatroom = async (name: string) => {
-    const res = await axios.post("/chats/new-chatroom", { name });
+    const res = await axios.post("/api/v1/chats/new-chatroom", { name });
     if (res.status !== 200) {
         throw new Error("Failed to create chatroom");
     }
@@ -65,7 +65,7 @@ export const deleteChatroom = async (
     
     try {
         const res = await axios.delete(
-            `/chats/delete-chatroom/${chatroomId}`,
+            `/api/v1/chats/delete-chatroom/${chatroomId}`,
             {
                 data: { 
                     deleteAttachments,
@@ -89,7 +89,7 @@ export const deleteChatroom = async (
 };
 
 export const editChatroom = async (chatroomId: string, name: string) => {
-    const res = await axios.put(`/chats/chatrooms/${chatroomId}`, { name });
+    const res = await axios.put(`/api/v1/chats/chatrooms/${chatroomId}`, { name });
     if (res.status !== 200) {
         throw new Error("Failed to edit chatroom");
     }
@@ -104,7 +104,7 @@ export const editChatroom = async (chatroomId: string, name: string) => {
 }
 
 export const getChatrooms = async () => {
-    const res = await axios.get("/chats/chatrooms");
+    const res = await axios.get("/api/v1/chats/chatrooms");
     if (res.status !== 200) {
         throw new Error("Failed to fetch chatrooms");
     }
@@ -114,7 +114,7 @@ export const getChatrooms = async () => {
 }
 
 export const getChatroomMessages = async (chatroomId: string) => {
-    const res = await axios.get(`/chats/chatrooms/${chatroomId}`);
+    const res = await axios.get(`/api/v1/chats/chatrooms/${chatroomId}`);
     if (res.status !== 200) {
         throw new Error("Failed to fetch chatroom messages");
     }
@@ -132,7 +132,7 @@ export const sendChat = async (chatroomId: string, messages: CompletionMessageDt
         formData.append('files', file.file);
     });
 
-    const res = await axios.post("/chats/chat", formData, {
+    const res = await axios.post("/api/v1/chats/chat", formData, {
         headers: {
         'Content-Type': 'multipart/form-data',
         },
@@ -151,7 +151,7 @@ export const imageToText = async (file: File): Promise<string> => {
   formData.append("image", file);
 
   const res = await axios.post(
-    "/chats/image-to-text", 
+    "/api/v1/chats/image-to-text", 
     formData, 
     {
         headers: { "Content-Type": "multipart/form-data" },
@@ -170,7 +170,7 @@ export const imageToText = async (file: File): Promise<string> => {
 export const fetchSignedUrl = async (s3Key: string)
 : Promise<{signedUrl: string, expiresAt: Date}> => {
     const res = await axios.get(
-        `/chats/attachment/${encodeURIComponent(s3Key)}`,
+        `/api/v1/chats/attachment/${encodeURIComponent(s3Key)}`,
         {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
@@ -200,7 +200,7 @@ export const fetchSignedUrls = async (s3Keys: string[])
     : Promise<{signedUrls: Record<string, string>, expiresAt: Date}> => {
 
     const res = await axios.post(
-        '/chats/attachments/signed-urls',
+        '/api/v1/chats/attachments/signed-urls',
         {
             s3Keys: s3Keys,
         },
