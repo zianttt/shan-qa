@@ -17,7 +17,7 @@ export const getSystemPrompt = (): string => {
 
         return finalPrompt;
     } catch (error) {
-        console.error("Error reading or processing system prompt file:", error);
+        // console.error("Error reading or processing system prompt file:", error);
         throw new Error("Failed to load system prompt");
     }
 };

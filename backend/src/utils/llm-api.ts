@@ -20,7 +20,6 @@ export const generateChatCompletion = async (messages: CompletionMessage[], mode
         messages: messages,
     });
     
-    console.log(completion.choices[0].message.content);
     return completion.choices[0].message.content;
 }
 

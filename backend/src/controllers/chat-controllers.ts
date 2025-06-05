@@ -40,7 +40,7 @@ export const sendMessage = async (
     const uploadedFiles = req.files as Express.Multer.File[];
 
     const latestMessage: CompletionMessageDto = messages[messages.length - 1];
-    console.log("Latest message content:", latestMessage);
+    // console.log("Latest message content:", latestMessage);
 
     if (!latestMessage || !latestMessage.content) {
       res.status(400).json({
@@ -409,12 +409,12 @@ export const deleteChatroom = async (
                 const s3Keys = await getChatroomAttachmentKeys(chatroomId);
                 
                 if (s3Keys.length > 0) {
-                    console.log(`Found ${s3Keys.length} attachments to delete for chatroom ${chatroomId}`);
+                    // console.log(`Found ${s3Keys.length} attachments to delete for chatroom ${chatroomId}`);
                     
                     await deleteS3Objects(s3Keys);
                     deletedAttachments = s3Keys.length;
                     
-                    console.log(`Successfully deleted ${deletedAttachments} attachments from S3`);
+                    // console.log(`Successfully deleted ${deletedAttachments} attachments from S3`);
                 }
             } catch (attachmentError) {
                 console.error('Error deleting chatroom attachments:', attachmentError);
@@ -427,7 +427,7 @@ export const deleteChatroom = async (
 
         // Delete all messages in the chatroom
         const messageDeleteResult = await Message.deleteMany({ chatroom_id: chatroomId });
-        console.log(`Deleted ${messageDeleteResult.deletedCount} messages from chatroom ${chatroomId}`);
+        // console.log(`Deleted ${messageDeleteResult.deletedCount} messages from chatroom ${chatroomId}`);
 
         // Delete the chatroom
         await chatroom.deleteOne();

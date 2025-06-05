@@ -58,7 +58,7 @@ export const uploadToS3 = async (files: Express.Multer.File[], userId: string): 
     return uploadedKeys;
     
   } catch (error) {
-    console.error('Error uploading files to S3:', error);
+    // console.error('Error uploading files to S3:', error);
     throw new Error(`Failed to upload files to S3: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
@@ -81,7 +81,7 @@ export const generateSignedUrl = async (s3Key: string, expiresIn: number = 3600)
     
     return signedUrl;
   } catch (error) {
-    console.error('Error generating signed URL:', error);
+    // console.error('Error generating signed URL:', error);
     throw new Error(`Failed to generate signed URL: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
@@ -92,7 +92,7 @@ export const generateSignedUrls = async (s3Keys: string[], expiresIn: number = 3
     const signedUrlPromises = s3Keys.map(key => generateSignedUrl(key, expiresIn));
     return await Promise.all(signedUrlPromises);
   } catch (error) {
-    console.error('Error generating signed URLs:', error);
+    // console.error('Error generating signed URLs:', error);
     throw new Error(`Failed to generate signed URLs: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
@@ -121,7 +121,7 @@ export const canUserAccessFile = async (userId: string, s3Key: string): Promise<
 
     return !!message;
   } catch (error) {
-    console.error('Error checking file access:', error);
+    // console.error('Error checking file access:', error);
     return false;
   }
 };
@@ -137,7 +137,7 @@ export const getChatroomIdsForUser = async (userId: string): Promise<string[]> =
     
     return chatrooms.map(room => room._id.toString());
   } catch (error) {
-    console.error('Error getting chatroom IDs:', error);
+    // console.error('Error getting chatroom IDs:', error);
     return [];
   }
 };
@@ -159,9 +159,9 @@ export const deleteS3Object = async (s3Key: string): Promise<void> => {
     const s3Client = createS3Client();
     await s3Client.send(command);
     
-    console.log(`Successfully deleted S3 object: ${s3Key}`);
+    // console.log(`Successfully deleted S3 object: ${s3Key}`);
   } catch (error) {
-    console.error(`Error deleting S3 object ${s3Key}:`, error);
+    // console.error(`Error deleting S3 object ${s3Key}:`, error);
     throw new Error(`Failed to delete S3 object: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
@@ -200,15 +200,15 @@ export const deleteS3Objects = async (s3Keys: string[]): Promise<void> => {
       const command = new DeleteObjectsCommand(deleteParams);
       const result = await s3Client.send(command);
       
-      console.log(`Successfully deleted ${chunk.length} S3 objects`);
+      // console.log(`Successfully deleted ${chunk.length} S3 objects`);
       
       // Log any errors that occurred during deletion
       if (result.Errors && result.Errors.length > 0) {
-        console.error('Some objects failed to delete:', result.Errors);
+        // console.error('Some objects failed to delete:', result.Errors);
       }
     }
   } catch (error) {
-    console.error('Error deleting S3 objects:', error);
+    // console.error('Error deleting S3 objects:', error);
     throw new Error(`Failed to delete S3 objects: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
@@ -233,7 +233,7 @@ export const getChatroomAttachmentKeys = async (chatroomId: string): Promise<str
 
     return s3Keys;
   } catch (error) {
-    console.error('Error getting chatroom attachment keys:', error);
+    // console.error('Error getting chatroom attachment keys:', error);
     throw new Error(`Failed to get attachment keys: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
