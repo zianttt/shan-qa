@@ -313,10 +313,17 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ content }) => {
   const processedContent = preprocessMath(content);
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md prose dark:prose-invert max-w-none overflow-visible">
+    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md prose dark:prose-invert max-w-none">
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[rehypeKatex, rehypeHighlight]}
+        components={{
+          pre({ node, ...props }) {
+            return (
+              <pre className="overflow-x-auto whitespace-pre-wrap p-2 rounded bg-gray-100 dark:bg-gray-700" {...props} />
+            );
+          }
+        }}
       >
         {processedContent}
       </ReactMarkdown>
