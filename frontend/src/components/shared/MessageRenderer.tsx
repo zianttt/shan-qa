@@ -313,7 +313,7 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ content }) => {
   const processedContent = preprocessMath(content);
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md prose dark:prose-invert max-w-none">
+    <div className="whitespace-pre-wrap">
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[rehypeKatex, rehypeHighlight]}
