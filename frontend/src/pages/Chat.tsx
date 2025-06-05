@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import Attachments from '../components/shared/Attachments';
 import { llmMapping } from '../helpers/constants';
+import { InlineMath, BlockMath } from 'react-katex';
 
 // Type definitions
 interface Match {
@@ -32,7 +33,6 @@ interface MessageRendererProps {
   content: string;
 }
 
-// Enhanced Message Renderer Component
 const MessageRenderer: React.FC<MessageRendererProps> = ({ content }) => {
   const [copiedBlocks, setCopiedBlocks] = useState<Set<string>>(new Set());
 
@@ -56,100 +56,85 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ content }) => {
     const parts: React.ReactNode[] = [];
     let blockCounter = 0;
 
-    // Regex patterns for different content types
-    const patterns = {
-      codeBlock: /```(\w+)?\n([\s\S]*?)```/g,
-    };
-
-    // Find all matches and their positions
+    // Step 1: Find all ```code blocks``` in the entire text
+    const codeBlockPattern = /```(\w+)?\n([\s\S]*?)```/g;
     const allMatches: Match[] = [];
-    
-    // Code blocks (highest priority)
-    let match: RegExpExecArray | null;
-    while ((match = patterns.codeBlock.exec(text)) !== null) {
+    let matchArr: RegExpExecArray | null;
+
+    while ((matchArr = codeBlockPattern.exec(text)) !== null) {
       allMatches.push({
         type: 'codeBlock',
-        start: match.index,
-        end: match.index + match[0].length,
-        language: match[1] || 'text',
-        content: match[2],
-        fullMatch: match[0]
+        start: matchArr.index,
+        end: matchArr.index + matchArr[0].length,
+        language: matchArr[1] || 'text',
+        content: matchArr[2],       // inner code
+        fullMatch: matchArr[0],
       });
     }
+    codeBlockPattern.lastIndex = 0;
 
-    // Reset regex
-    patterns.codeBlock.lastIndex = 0;
-
-    // Sort matches by start position
+    // Sort by start index
     allMatches.sort((a, b) => a.start - b.start);
 
-    // Process text, avoiding overlaps
+    // Filter out any overlapping code blocks
     const processedRanges: ProcessedRange[] = [];
-    
-    allMatches.forEach(match => {
-      // Check if this match overlaps with any processed range
-      const hasOverlap = processedRanges.some(range => 
-        (match.start >= range.start && match.start < range.end) ||
-        (match.end > range.start && match.end <= range.end) ||
-        (match.start <= range.start && match.end >= range.end)
+    allMatches.forEach(m => {
+      const overlaps = processedRanges.some(r =>
+        (m.start >= r.start && m.start < r.end) ||
+        (m.end > r.start && m.end <= r.end) ||
+        (m.start <= r.start && m.end >= r.end)
       );
-
-      if (!hasOverlap) {
-        processedRanges.push({ start: match.start, end: match.end, match });
+      if (!overlaps) {
+        processedRanges.push({ start: m.start, end: m.end, match: m });
       }
     });
-
-    // Sort processed ranges by start position
     processedRanges.sort((a, b) => a.start - b.start);
 
-    // Build the final content
+    // Step 2: Walk through text, interleaving code-blocks and inline content
     let lastIndex = 0;
-
     processedRanges.forEach(({ match }) => {
-      // Add text before this match
+      // Anything before this code block
       if (match.start > lastIndex) {
         const beforeText = text.slice(lastIndex, match.start);
         parts.push(...processInlineContent(beforeText));
       }
 
-      // Add the matched content
-      if (match.type === 'codeBlock') {
-        const blockId = `code-${blockCounter++}`;
-        parts.push(
-          <div key={blockId} className="my-3 rounded-lg overflow-hidden bg-gray-900">
-            <div className="flex items-center justify-between px-4 py-2 bg-gray-800 text-sm text-gray-300">
-              <span>{match.language}</span>
-              <button
-                onClick={() => copyToClipboard(match.content, blockId)}
-                className="flex items-center gap-1 px-2 py-1 rounded text-xs hover:bg-gray-700 transition-colors"
-              >
-                {copiedBlocks.has(blockId) ? (
-                  <>
-                    <Check size={12} />
-                    Copied
-                  </>
-                ) : (
-                  <>
-                    <Copy size={12} />
-                    Copy
-                  </>
-                )}
-              </button>
-            </div>
-            <pre className="p-4 overflow-x-auto text-sm">
-              <code className="text-green-400">{match.content}</code>
-            </pre>
+      // Render the code block itself
+      const blockId = `code-${blockCounter++}`;
+      parts.push(
+        <div key={blockId} className="my-3 rounded-lg overflow-hidden bg-gray-900">
+          <div className="flex items-center justify-between px-4 py-2 bg-gray-800 text-sm text-gray-300">
+            <span>{match.language}</span>
+            <button
+              onClick={() => copyToClipboard(match.content, blockId)}
+              className="flex items-center gap-1 px-2 py-1 rounded text-xs hover:bg-gray-700 transition-colors"
+            >
+              {copiedBlocks.has(blockId) ? (
+                <>
+                  <Check size={12} />
+                  Copied
+                </>
+              ) : (
+                <>
+                  <Copy size={12} />
+                  Copy
+                </>
+              )}
+            </button>
           </div>
-        );
-      }
+          <pre className="p-4 overflow-x-auto text-sm">
+            <code className="text-green-400">{match.content}</code>
+          </pre>
+        </div>
+      );
 
       lastIndex = match.end;
     });
 
-    // Add remaining text
+    // Anything after the last code-block
     if (lastIndex < text.length) {
-      const remainingText = text.slice(lastIndex);
-      parts.push(...processInlineContent(remainingText));
+      const remaining = text.slice(lastIndex);
+      parts.push(...processInlineContent(remaining));
     }
 
     return parts;
@@ -158,13 +143,14 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ content }) => {
   const processInlineContent = (text: string): React.ReactNode[] => {
     const parts: React.ReactNode[] = [];
     const lines = text.split('\n');
-    
-    lines.forEach((line, lineIndex) => {
-      if (lineIndex > 0) parts.push(<br key={`br-${lineIndex}`} />);
-      
-      const lineParts: React.ReactNode[] = [];
 
-      // Process inline patterns
+    lines.forEach((line, lineIndex) => {
+      // If it’s not the first line, insert a <br/>
+      if (lineIndex > 0) {
+        parts.push(<br key={`br-${lineIndex}`} />);
+      }
+
+      // Collect matches for inline patterns on this single line
       const inlinePatterns: InlinePattern[] = [
         { regex: /`([^`]+)`/g, type: 'inlineCode' },
         { regex: /\$\$([\s\S]*?)\$\$|\$([^$]+)\$/g, type: 'latex' },
@@ -175,101 +161,132 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ content }) => {
       ];
 
       const matches: Match[] = [];
-      inlinePatterns.forEach(pattern => {
-        let match: RegExpExecArray | null;
-        while ((match = pattern.regex.exec(line)) !== null) {
+      inlinePatterns.forEach(({ regex, type }) => {
+        let m: RegExpExecArray | null;
+        while ((m = regex.exec(line)) !== null) {
+          let inner = '';
+          if (type === 'latex') {
+            // m[1] captures inside $$…$$, m[2] captures inside $…$
+            inner = m[1] ?? m[2] ?? '';
+          } else if (type === 'inlineCode') {
+            inner = m[1];
+          } else if (type === 'url') {
+            inner = m[0];
+          } else {
+            // bold/italic/strikethrough: m[1] is the inner text
+            inner = m[1];
+          }
+
           matches.push({
-            type: pattern.type,
-            start: match.index,
-            end: match.index + match[0].length,
-            content: match[1] || match[2] || match[0],
-            fullMatch: match[0]
+            type,
+            start: m.index,
+            end: m.index + m[0].length,
+            content: inner,
+            fullMatch: m[0],
           });
         }
-        pattern.regex.lastIndex = 0;
+        regex.lastIndex = 0;
       });
 
+      // Sort matches by their start index
       matches.sort((a, b) => a.start - b.start);
 
-      // Remove overlapping matches
+      // Filter out any overlaps among these inline matches
       const validMatches: Match[] = [];
-      matches.forEach(match => {
-        const hasOverlap = validMatches.some(vm => 
-          (match.start >= vm.start && match.start < vm.end) ||
-          (match.end > vm.start && match.end <= vm.end)
+      matches.forEach(m => {
+        const overlap = validMatches.some(vm =>
+          (m.start >= vm.start && m.start < vm.end) ||
+          (m.end > vm.start && m.end <= vm.end)
         );
-        if (!hasOverlap) {
-          validMatches.push(match);
+        if (!overlap) {
+          validMatches.push(m);
         }
       });
 
+      // Now build up the React nodes for this single line
+      const lineParts: React.ReactNode[] = [];
       let pos = 0;
-      validMatches.forEach((match, matchIndex) => {
-        // Add text before match
-        if (match.start > pos) {
-          lineParts.push(line.slice(pos, match.start));
+
+      validMatches.forEach((m, idx) => {
+        // 1) Text before this match
+        if (m.start > pos) {
+          lineParts.push(line.slice(pos, m.start));
         }
 
-        // Add formatted content
-        switch (match.type) {
+        // 2) Render the match itself, according to its type
+        switch (m.type) {
           case 'inlineCode':
             lineParts.push(
-              <code key={`inline-${lineIndex}-${matchIndex}`} className="bg-gray-200 px-1 py-0.5 rounded text-sm font-mono">
-                {match.content}
+              <code
+                key={`inline-${lineIndex}-${idx}`}
+                className="bg-gray-200 px-1 py-0.5 rounded text-sm font-mono"
+              >
+                {m.content}
               </code>
             );
             break;
+
           case 'latex':
-            lineParts.push(
-              <span key={`latex-${lineIndex}-${matchIndex}`} className="bg-blue-50 px-1 py-0.5 rounded text-sm font-mono text-blue-800">
-                {match.fullMatch}
-              </span>
-            );
+            // If the raw delimiters were $$…$$, use BlockMath; else InlineMath
+            if (m.fullMatch.startsWith('$$') && m.fullMatch.endsWith('$$')) {
+              lineParts.push(
+                <BlockMath
+                  key={`blockmath-${lineIndex}-${idx}`}
+                  math={m.content.trim()}
+                />
+              );
+            } else {
+              lineParts.push(
+                <InlineMath
+                  key={`inlinemath-${lineIndex}-${idx}`}
+                  math={m.content.trim()}
+                />
+              );
+            }
             break;
+
           case 'url':
             lineParts.push(
-              <a 
-                key={`url-${lineIndex}-${matchIndex}`}
-                href={match.content} 
-                target="_blank" 
+              <a
+                key={`url-${lineIndex}-${idx}`}
+                href={m.content}
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 hover:text-blue-800 underline"
               >
-                {match.content}
+                {m.content}
               </a>
             );
             break;
+
           case 'bold':
             lineParts.push(
-              <strong key={`bold-${lineIndex}-${matchIndex}`}>
-                {match.content}
-              </strong>
+              <strong key={`bold-${lineIndex}-${idx}`}>{m.content}</strong>
             );
             break;
+
           case 'italic':
             lineParts.push(
-              <em key={`italic-${lineIndex}-${matchIndex}`}>
-                {match.content}
-              </em>
+              <em key={`italic-${lineIndex}-${idx}`}>{m.content}</em>
             );
             break;
+
           case 'strikethrough':
             lineParts.push(
-              <del key={`strike-${lineIndex}-${matchIndex}`}>
-                {match.content}
-              </del>
+              <del key={`strike-${lineIndex}-${idx}`}>{m.content}</del>
             );
             break;
         }
 
-        pos = match.end;
+        pos = m.end;
       });
 
-      // Add remaining text
+      // 3) Any trailing text after the last match
       if (pos < line.length) {
         lineParts.push(line.slice(pos));
       }
 
+      // Finally, append all of this line’s parts into the overall array
       parts.push(...lineParts);
     });
 
