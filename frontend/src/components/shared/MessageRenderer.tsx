@@ -305,7 +305,7 @@ interface MessageRendererProps {
 
 const MessageRenderer: React.FC<MessageRendererProps> = ({ content }) => {
   const preprocessMath = (text: string) => {
-    return text.replace(/\\\[([\s\S]+?)\\\]/g, (match, expr) => {
+    return text.replace(/\\\[([\s\S]+?)\\\]/g, (_match, expr) => {
       return `$$${expr}$$`;
     });
   };
