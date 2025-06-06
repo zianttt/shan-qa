@@ -1,5 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@100..900&display=swap');
 @import "tailwindcss";
+@import 'katex/dist/katex.min.css';
+@import 'highlight.js/styles/github.css';
 
 html,
 body {
@@ -8,10 +10,6 @@ body {
   background: white;
   color: #05101c;
   font-family: "Roboto Slab", sans-serif;
-}
-
-.image-inverted {
-  filter: invert(100%);
 }
 
 .nav-link {
@@ -24,3 +22,19 @@ body {
   text-decoration: none;
   letter-spacing: 1px;
 }
+
+/* .katex-display {
+  overflow-x: visible !important;
+  width: auto !important;
+  margin: 0.5em 0;
+}
+
+.katex {
+  max-width: 100%;
+  overflow-x: visible !important;
+}
+
+.katex .katex-html {
+  white-space: normal; 
+  overflow-x: visible !important;
+} */

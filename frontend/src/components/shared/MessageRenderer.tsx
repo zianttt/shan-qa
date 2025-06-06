@@ -313,14 +313,31 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ content }) => {
   const processedContent = preprocessMath(content);
 
   return (
-    <div className="whitespace-pre-wrap">
+    <div className="message-content whitespace-pre-wrap overflow-visible relative">
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[rehypeKatex, rehypeHighlight]}
         components={{
-          pre({ node, ...props }) {
+          pre({ node, className, children, ...props }) {
             return (
-              <pre className="overflow-x-auto whitespace-pre-wrap p-2 rounded bg-gray-100 dark:bg-gray-700" {...props} />
+              <pre 
+                className={`overflow-x-auto overflow-y-visible whitespace-pre-wrap p-2 rounded bg-gray-100 dark:bg-gray-700 max-w-full ${className || ''}`} 
+                style={{ overflowY: 'visible' }}
+                {...props}
+              >
+                {children}
+              </pre>
+            );
+          },
+          code({ node, className, children, ...props }) {
+            return (
+              <code 
+                className={`overflow-visible ${className || ''}`}
+                style={{ overflow: 'visible' }}
+                {...props}
+              >
+                {children}
+              </code>
             );
           }
         }}

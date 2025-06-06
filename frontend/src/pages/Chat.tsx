@@ -92,7 +92,7 @@ const Chat: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Backdrop for mobile sidebar */}
       {sidebarOpen && (
         <div 
@@ -310,153 +310,158 @@ const Chat: React.FC = () => {
           </div>
         </div>
 
-        {/* Chat Messages */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {(chatContext?.currentChat?.messages.length === 0 || chatContext?.currentChat == null) ? (
-            <div className="h-full flex items-center justify-center">
-              <div className="text-center p-8 max-w-md">
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                  <MessageSquare size={32} className="text-white" />
-                </div>
-                <h2 className="text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent mb-3">
-                  Shan-GPT
-                </h2>
-                <p className="text-slate-500 leading-relaxed">
-                  Start a conversation.
-                </p>
-              </div>
-            </div>
-          ) : (
-            chatContext?.currentChat?.messages.map((msg, index) => (
-              <div 
-                key={`${msg.timestamp.toISOString()}-${index}`} 
-                className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div className={`max-w-[75%] ${msg.sender === 'user' ? 'order-1' : 'order-2'}`}>
-                  <div className={`rounded-2xl p-4 shadow-lg ${
-                    msg.sender === 'user' 
-                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white' 
-                      : 'bg-white border border-slate-200/50 text-slate-800'
-                  }`}>
-                    <MessageRenderer content={msg.content} />
-                    <Attachments attachments={msg.attachments || []} />
+        {/* Chat Messages Container - Now with fixed height and scrollable */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-6 space-y-6 pb-4">
+            {(chatContext?.currentChat?.messages.length === 0 || chatContext?.currentChat == null) ? (
+              <div className="h-full flex items-center justify-center min-h-[400px]">
+                <div className="text-center p-8 max-w-md">
+                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <MessageSquare size={32} className="text-white" />
                   </div>
-                  <div className={`text-xs mt-2 px-2 ${
-                    msg.sender === 'user' ? 'text-right text-slate-400' : 'text-left text-slate-400'
-                  }`}>
-                    {formatTime(msg.timestamp)}
-                  </div>
-                </div>
-                
-                {/* Avatar */}
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  msg.sender === 'user' ? 'order-2 ml-3 bg-gradient-to-r from-blue-500 to-indigo-600' : 'order-1 mr-3 bg-gradient-to-r from-slate-400 to-slate-500'
-                } shadow-lg`}>
-                  {msg.sender === 'user' ? (
-                    <User size={14} className="text-white" />
-                  ) : (
-                    <Bot size={14} className="text-white" />
-                  )}
+                  <h2 className="text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent mb-3">
+                    Shan-GPT
+                  </h2>
+                  <p className="text-slate-500 leading-relaxed">
+                    Start a conversation.
+                  </p>
                 </div>
               </div>
-            ))
-          )}
-          
-          {/* Loading indicator */}
-          {chatContext?.isLoading && (
-            <div className="flex justify-start">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-slate-400 to-slate-500 flex items-center justify-center shadow-lg">
-                  <Bot size={14} className="text-white" />
-                </div>
-                <div className="bg-white rounded-2xl p-4 shadow-lg border border-slate-200/50">
-                  <div className="flex items-center space-x-2">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                      <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+            ) : (
+              chatContext?.currentChat?.messages.map((msg, index) => (
+                <div 
+                  key={`${msg.timestamp.toISOString()}-${index}`} 
+                  className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div className={`max-w-[75%] ${msg.sender === 'user' ? 'order-1' : 'order-2'}`}>
+                    <div className={`rounded-2xl p-4 shadow-lg ${
+                      msg.sender === 'user' 
+                        ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white' 
+                        : 'bg-white border border-slate-200/50 text-slate-800'
+                    }`}>
+                      <MessageRenderer content={msg.content} />
+                      <Attachments attachments={msg.attachments || []} />
                     </div>
-                    <span className="text-sm text-slate-500">AI is thinking...</span>
+                    <div className={`text-xs mt-2 px-2 ${
+                      msg.sender === 'user' ? 'text-right text-slate-400' : 'text-left text-slate-400'
+                    }`}>
+                      {formatTime(msg.timestamp)}
+                    </div>
+                  </div>
+                  
+                  {/* Avatar */}
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                    msg.sender === 'user' ? 'order-2 ml-3 bg-gradient-to-r from-blue-500 to-indigo-600' : 'order-1 mr-3 bg-gradient-to-r from-slate-400 to-slate-500'
+                  } shadow-lg`}>
+                    {msg.sender === 'user' ? (
+                      <User size={14} className="text-white" />
+                    ) : (
+                      <Bot size={14} className="text-white" />
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+            
+            {/* Loading indicator */}
+            {chatContext?.isLoading && (
+              <div className="flex justify-start">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-slate-400 to-slate-500 flex items-center justify-center shadow-lg">
+                    <Bot size={14} className="text-white" />
+                  </div>
+                  <div className="bg-white rounded-2xl p-4 shadow-lg border border-slate-200/50">
+                    <div className="flex items-center space-x-2">
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                        <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                      </div>
+                      <span className="text-sm text-slate-500">AI is thinking...</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-          
-          <div ref={messagesEndRef} />
+            )}
+            
+            <div ref={messagesEndRef} />
+          </div>
         </div>
         
-        {/* Image Previews */}
-        {(chatContext?.files.length && chatContext?.files.length > 0) ? (
-          <div className="px-6 pb-4">
-            <div className="bg-white/70 backdrop-blur-sm rounded-xl p-4 border border-slate-200/50 shadow-lg">
-              <div className="flex items-center mb-3">
-                <ImageIcon size={16} className="text-slate-500 mr-2" />
-                <span className="text-sm font-medium text-slate-700">Attachments</span>
-              </div>
-              <div className="flex flex-wrap gap-3">
-                {chatContext?.files.map((file, index) => (
-                  <div key={index} className="relative group">
-                    <img 
-                      src={file.previewUrl} 
-                      alt="Upload preview" 
-                      className="h-20 w-20 object-cover rounded-xl border-2 border-slate-200/50 shadow-md group-hover:shadow-lg transition-all duration-200"
-                    />
-                    <button 
-                      onClick={() => chatContext?.removeFiles(index)}
-                      className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200 transform hover:scale-110"
-                    >
-                      <X size={12} />
-                    </button>
-                  </div>
-                ))}
+        {/* Fixed Input Section at Bottom */}
+        <div className="flex-shrink-0">
+          {/* Image Previews */}
+          {(chatContext?.files.length && chatContext?.files.length > 0) ? (
+            <div className="px-6 pb-4">
+              <div className="bg-white/70 backdrop-blur-sm rounded-xl p-4 border border-slate-200/50 shadow-lg">
+                <div className="flex items-center mb-3">
+                  <ImageIcon size={16} className="text-slate-500 mr-2" />
+                  <span className="text-sm font-medium text-slate-700">Attachments</span>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {chatContext?.files.map((file, index) => (
+                    <div key={index} className="relative group">
+                      <img 
+                        src={file.previewUrl} 
+                        alt="Upload preview" 
+                        className="h-20 w-20 object-cover rounded-xl border-2 border-slate-200/50 shadow-md group-hover:shadow-lg transition-all duration-200"
+                      />
+                      <button 
+                        onClick={() => chatContext?.removeFiles(index)}
+                        className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200 transform hover:scale-110"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        ) : null}
-        
-        {/* Input Area */}
-        <div className="p-6 border-t border-slate-200/50 bg-white/70 backdrop-blur-xl">
-          <div className="bg-white rounded-2xl border border-slate-200/50 shadow-xl overflow-hidden">
-            <div className="flex items-end">
-              <textarea
-                value={chatContext?.message}
-                onChange={(e) => chatContext?.setMessage(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Type your message here..."
-                className="flex-1 px-6 py-4 outline-none resize-none max-h-32 text-slate-800 placeholder-slate-400"
-                rows={1}
-              />
-              
-              <div className="flex items-center p-4 space-x-2">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={chatContext?.handleImageUpload}
-                  accept="image/*"
-                  multiple
-                  className="hidden"
+          ) : null}
+          
+          {/* Input Area */}
+          <div className="p-6 border-t border-slate-200/50 bg-white/70 backdrop-blur-xl">
+            <div className="bg-white rounded-2xl border border-slate-200/50 shadow-xl overflow-hidden">
+              <div className="flex items-end">
+                <textarea
+                  value={chatContext?.message}
+                  onChange={(e) => chatContext?.setMessage(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Type your message here..."
+                  className="flex-1 px-6 py-4 outline-none resize-none max-h-32 text-slate-800 placeholder-slate-400"
+                  rows={1}
                 />
-                <button 
-                  onClick={() => fileInputRef.current?.click()}
-                  className="p-3 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all duration-200 transform hover:scale-110"
-                  title="Attach images"
-                >
-                  <PlusCircle size={20} />
-                </button>
                 
-                <button 
-                  onClick={chatContext?.sendMessage}
-                  disabled={chatContext?.isLoading || (!chatContext?.message.trim() && chatContext?.files.length === 0)}
-                  className={`p-3 rounded-xl transition-all duration-200 transform hover:scale-110 ${
-                    chatContext?.isLoading || (!chatContext?.message.trim() && chatContext?.files.length === 0) 
-                      ? 'text-slate-300 cursor-not-allowed' 
-                      : 'text-white bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg hover:shadow-xl'
-                  }`}
-                  title="Send message"
-                >
-                  <Send size={20} />
-                </button>
+                <div className="flex items-center p-4 space-x-2">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={chatContext?.handleImageUpload}
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                  />
+                  <button 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="p-3 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all duration-200 transform hover:scale-110"
+                    title="Attach images"
+                  >
+                    <PlusCircle size={20} />
+                  </button>
+                  
+                  <button 
+                    onClick={chatContext?.sendMessage}
+                    disabled={chatContext?.isLoading || (!chatContext?.message.trim() && chatContext?.files.length === 0)}
+                    className={`p-3 rounded-xl transition-all duration-200 transform hover:scale-110 ${
+                      chatContext?.isLoading || (!chatContext?.message.trim() && chatContext?.files.length === 0) 
+                        ? 'text-slate-300 cursor-not-allowed' 
+                        : 'text-white bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg hover:shadow-xl'
+                    }`}
+                    title="Send message"
+                  >
+                    <Send size={20} />
+                  </button>
+                </div>
               </div>
             </div>
           </div>

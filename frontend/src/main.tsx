@@ -1,8 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import 'katex/dist/katex.min.css';
-import 'highlight.js/styles/github.css';
 import App from './App.tsx'
 import { createTheme, ThemeProvider } from '@mui/material/styles'
 import { BrowserRouter } from 'react-router-dom'
@@ -11,7 +9,8 @@ import axios from 'axios'
 import { Toaster } from 'react-hot-toast'
 import { ChatProvider } from './context/ChatContext.tsx'
 
-// axios.defaults.baseURL = import.meta.env.VITE_SERVER_URL
+axios.defaults.baseURL = import.meta.env.VITE_SERVER_URL || undefined;
+
 axios.defaults.withCredentials = true;
 
 const theme = createTheme({
