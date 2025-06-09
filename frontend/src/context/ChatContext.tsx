@@ -310,11 +310,11 @@ const ChatProvider = ({ children }: { children: React.ReactNode}) => {
     setChats((prev) =>
       prev.map((c) => (c.id === updatedChat.id ? updatedChat : c))
     );
-    
-    await getCompletion(updatedChat.id, updatedChat);
 
     setMessage('');
     setFiles([]);
+    
+    await getCompletion(updatedChat.id, updatedChat);
   };
 
 
